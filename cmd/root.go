@@ -17,12 +17,11 @@ package cmd
 
 import (
   "fmt"
-  "os"
   "github.com/spf13/cobra"
+  "os"
 
   homedir "github.com/mitchellh/go-homedir"
   "github.com/spf13/viper"
-
 )
 
 
@@ -48,7 +47,6 @@ to quickly create a Cobra application.`,
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
   if err := rootCmd.Execute(); err != nil {
-    fmt.Println(err)
     os.Exit(1)
   }
 }
