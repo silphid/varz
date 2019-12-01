@@ -21,6 +21,7 @@ import (
 	"os"
 	"regexp"
 	"sort"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -62,17 +63,15 @@ func run(_ *cobra.Command, args []string) error {
 	}
 
 	// Find section within yaml tree
-	path := args[0]
-	section, ok := m[path].(mapping)
-	if !ok {
-		return fmt.Errorf("section not found: %s", path)
+	section, err := getSection(m, args[0])
+	if err != nil {
+		return err
 	}
 
 	// Extract and sort valid environment variables
 	envVarRegex := regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
-	subSection := section["default"].(mapping)
-	keys := make([]string, 0, len(subSection))
-	for key := range subSection {
+	keys := make([]string, 0, len(section))
+	for key := range section {
 		keyStr := key.(string)
 		if envVarRegex.MatchString(keyStr) {
 			keys = append(keys, keyStr)
@@ -82,7 +81,7 @@ func run(_ *cobra.Command, args []string) error {
 
 	// Output environment variables
 	for _, key := range keys {
-		line := fmt.Sprintf("export %s=%s\n", key, subSection[key])
+		line := fmt.Sprintf("export %s=%s\n", key, section[key])
 		fmt.Printf(line)
 		if *verbose {
 			if _, err := fmt.Fprintf(os.Stderr, line); err != nil {
@@ -92,4 +91,16 @@ func run(_ *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func getSection(m mapping, path string) (mapping, error) {
+	cur := m
+	for _, component := range strings.Split(path, "/") {
+		val, ok := cur[component].(mapping)
+		if !ok {
+			return nil, fmt.Errorf("section not found: %s", path)
+		}
+		cur = val
+	}
+	return cur, nil
 }

@@ -1,5 +1,5 @@
 /*
-Copyright © 2019 NAME HERE <EMAIL ADDRESS>
+Copyright © 2019 Mathieu Frenette <mathieu@silphid.com>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import (
 
 
 var cfgFile string
-
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -76,7 +75,7 @@ func initConfig() {
     // Find home directory.
     home, err := homedir.Dir()
     if err != nil {
-      fmt.Println(err)
+      _, _ = fmt.Fprintf(os.Stderr, "Failed to find home directory: %v", err)
       os.Exit(1)
     }
 
@@ -86,10 +85,6 @@ func initConfig() {
   }
 
   viper.AutomaticEnv() // read in environment variables that match
-
-  // If a config file is found, read it in.
-  if err := viper.ReadInConfig(); err == nil {
-    fmt.Println("Using config file:", viper.ConfigFileUsed())
-  }
+  _ = viper.ReadInConfig() // if a config file is found, read it in.
 }
 
