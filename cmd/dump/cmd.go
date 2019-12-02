@@ -18,8 +18,8 @@ package dump
 import (
 	"fmt"
 	"os"
-	"varz/common"
 
+	"github.com/silphid/varz/common"
 	"github.com/spf13/cobra"
 )
 
@@ -28,11 +28,15 @@ var Cmd = &cobra.Command {
 	Short: "Shows current values in your shell of the corresponding variables",
 	Long: `TODO`,
 	RunE: run,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.RangeArgs(0, 1),
 }
 
 func run(_ *cobra.Command, args []string) error {
-	names, _, err := common.GetVariables("varz.yaml", args[0])
+	keyPath, err := common.GetKeyPathOrDefault(args, 0)
+	if err != nil {
+		return err
+	}
+	names, _, err := common.GetVariables(common.GetDataFilePath(), keyPath)
 	if err != nil {
 		return err
 	}

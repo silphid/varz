@@ -19,19 +19,21 @@ import (
   "fmt"
   "github.com/spf13/cobra"
   "os"
+  "path/filepath"
 
   homedir "github.com/mitchellh/go-homedir"
+  "github.com/silphid/varz/cmd/dump"
+  "github.com/silphid/varz/cmd/export"
+  "github.com/silphid/varz/cmd/get"
+  "github.com/silphid/varz/cmd/list"
+  "github.com/silphid/varz/cmd/set"
   "github.com/spf13/viper"
-  "varz/cmd/dump"
-  "varz/cmd/export"
-  "varz/cmd/list"
 )
-
 
 var cfgFile string
 
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
+// cmd represents the base command when called without any subcommands
+var cmd = &cobra.Command{
   Use:   "varz",
   Short: "Allows to quickly export different sets of environment variables to current shell",
   Long: `TODO...`,
@@ -41,9 +43,9 @@ var rootCmd = &cobra.Command{
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
+// This is called by main.main(). It only needs to happen once to the cmd.
 func Execute() {
-  if err := rootCmd.Execute(); err != nil {
+  if err := cmd.Execute(); err != nil {
     os.Exit(1)
   }
 }
@@ -55,16 +57,18 @@ func init() {
   // Cobra supports persistent flags, which, if defined here,
   // will be global for your application.
 
-  rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.varz.yaml)")
+  cmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (_default is $HOME/.varz.yaml)")
 
 
   // Cobra also supports local flags, which will only run
   // when this action is called directly.
-  rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+  cmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
-  rootCmd.AddCommand(export.Cmd)
-  rootCmd.AddCommand(list.Cmd)
-  rootCmd.AddCommand(dump.Cmd)
+  cmd.AddCommand(export.Cmd)
+  cmd.AddCommand(list.Cmd)
+  cmd.AddCommand(dump.Cmd)
+  cmd.AddCommand(get.Cmd)
+  cmd.AddCommand(set.Cmd)
 }
 
 
@@ -81,12 +85,28 @@ func initConfig() {
       os.Exit(1)
     }
 
-    // Search config in home directory with name ".varz" (without extension).
-    viper.AddConfigPath(home)
-    viper.SetConfigName(".varz")
+    configFile := filepath.Join(home, ".varz.yaml")
+    viper.SetConfigFile(configFile)
+
+    // Force creation of config file, if not already existing
+    if !fileExists(configFile) {
+      emptyFile, err := os.Create(configFile)
+      if err != nil {
+        _, _ = fmt.Fprintf(os.Stderr, "Failed to create config file %s: %v", configFile, err)
+        os.Exit(1)
+      }
+      _ = emptyFile.Close()
+    }
   }
 
   viper.AutomaticEnv() // read in environment variables that match
   _ = viper.ReadInConfig() // if a config file is found, read it in.
 }
 
+func fileExists(filename string) bool {
+  info, err := os.Stat(filename)
+  if os.IsNotExist(err) {
+    return false
+  }
+  return !info.IsDir()
+}

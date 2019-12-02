@@ -17,8 +17,8 @@ package list
 
 import (
 	"fmt"
-	"varz/common"
 
+	"github.com/silphid/varz/common"
 	"github.com/spf13/cobra"
 )
 
@@ -31,11 +31,15 @@ in your current shell. For example:
 
 . <(varz export path/to/vars)`,
 	RunE: run,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.RangeArgs(0, 1),
 }
 
 func run(_ *cobra.Command, args []string) error {
-	names, values, err := common.GetVariables("varz.yaml", args[0])
+	keyPath, err := common.GetKeyPathOrDefault(args, 0)
+	if err != nil {
+		return err
+	}
+	names, values, err := common.GetVariables("varz.yaml", keyPath)
 	if err != nil {
 		return err
 	}
