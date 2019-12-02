@@ -69,7 +69,7 @@ func run(_ *cobra.Command, args []string) error {
 	}
 
 	// Extract and sort valid environment variables
-	envVarRegex := regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
+	envVarRegex := regexp.MustCompile(`^[A-Z0-9_]+$`)
 	keys := make([]string, 0, len(section))
 	for key := range section {
 		keyStr := key.(string)
@@ -81,7 +81,7 @@ func run(_ *cobra.Command, args []string) error {
 
 	// Output environment variables
 	for _, key := range keys {
-		line := fmt.Sprintf("export %s=%s\n", key, section[key])
+		line := fmt.Sprintf("export %s=%v\n", key, section[key])
 		fmt.Printf(line)
 		if *verbose {
 			if _, err := fmt.Fprintf(os.Stderr, line); err != nil {
