@@ -13,26 +13,21 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package cmd
+package export
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
-	"regexp"
-	"sort"
-	"strings"
+	"varz/cmd"
+	"varz/common"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
 )
-
-type mapping = map[interface{}]interface{}
 
 var verbose *bool
 
 func init() {
-	rootCmd.AddCommand(exportCmd)
+	cmd.RootCmd.AddCommand(exportCmd)
 	verbose = exportCmd.Flags().BoolP("verbose", "v", false, "Outputs more information on stderr")
 }
 
@@ -49,39 +44,14 @@ in your current shell. For example:
 }
 
 func run(_ *cobra.Command, args []string) error {
-	// Load file to buffer
-	data, err := ioutil.ReadFile("varz.yaml")
+	names, values, err := common.GetVariables("varz.yaml", args[0])
 	if err != nil {
 		return err
 	}
-
-	// Parse buffer as yaml into map
-	m := make(mapping)
-	err = yaml.Unmarshal(data, &m)
-	if err != nil {
-		return err
-	}
-
-	// Find section within yaml tree
-	section, err := getSection(m, args[0])
-	if err != nil {
-		return err
-	}
-
-	// Extract and sort valid environment variables
-	envVarRegex := regexp.MustCompile(`^[A-Z0-9_]+$`)
-	keys := make([]string, 0, len(section))
-	for key := range section {
-		keyStr := key.(string)
-		if envVarRegex.MatchString(keyStr) {
-			keys = append(keys, keyStr)
-		}
-	}
-	sort.Strings(keys)
 
 	// Output environment variables
-	for _, key := range keys {
-		line := fmt.Sprintf("export %s=%v\n", key, section[key])
+	for _, name := range names {
+		line := fmt.Sprintf("export %s=%v\n", name, values[name])
 		fmt.Printf(line)
 		if *verbose {
 			if _, err := fmt.Fprintf(os.Stderr, line); err != nil {
@@ -91,16 +61,4 @@ func run(_ *cobra.Command, args []string) error {
 	}
 
 	return nil
-}
-
-func getSection(m mapping, path string) (mapping, error) {
-	cur := m
-	for _, component := range strings.Split(path, "/") {
-		val, ok := cur[component].(mapping)
-		if !ok {
-			return nil, fmt.Errorf("section not found: %s", path)
-		}
-		cur = val
-	}
-	return cur, nil
 }
