@@ -22,6 +22,7 @@ import (
 
   homedir "github.com/mitchellh/go-homedir"
   "github.com/spf13/viper"
+  "varz/cmd/dump"
   "varz/cmd/export"
   "varz/cmd/list"
 )
@@ -63,6 +64,7 @@ func init() {
 
   rootCmd.AddCommand(export.Cmd)
   rootCmd.AddCommand(list.Cmd)
+  rootCmd.AddCommand(dump.Cmd)
 }
 
 
