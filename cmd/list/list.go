@@ -17,21 +17,13 @@ package list
 
 import (
 	"fmt"
-	"os"
-	"varz/cmd"
 	"varz/common"
 
 	"github.com/spf13/cobra"
 )
 
-var verbose *bool
-
-func init() {
-	cmd.RootCmd.AddCommand(listCmd)
-}
-
-var listCmd = &cobra.Command {
-	Use:   "export",
+var Cmd = &cobra.Command {
+	Use:   "list",
 	Short: "Outputs export statements for given subset of variables",
 	Long: `The output of this command is intended to be sourced
 in order to define the corresponding environment variables
@@ -50,13 +42,8 @@ func run(_ *cobra.Command, args []string) error {
 
 	// Output environment variables
 	for _, name := range names {
-		line := fmt.Sprintf("export %s=%v\n", name, values[name])
+		line := fmt.Sprintf("%s=%v\n", name, values[name])
 		fmt.Printf(line)
-		if *verbose {
-			if _, err := fmt.Fprintf(os.Stderr, line); err != nil {
-				return err
-			}
-		}
 	}
 
 	return nil

@@ -22,15 +22,15 @@ import (
 
   homedir "github.com/mitchellh/go-homedir"
   "github.com/spf13/viper"
-  _ "varz/cmd/export"
-  _ "varz/cmd/list"
+  "varz/cmd/export"
+  "varz/cmd/list"
 )
 
 
 var cfgFile string
 
-// RootCmd represents the base command when called without any subcommands
-var RootCmd = &cobra.Command{
+// rootCmd represents the base command when called without any subcommands
+var rootCmd = &cobra.Command{
   Use:   "varz",
   Short: "Allows to quickly export different sets of environment variables to current shell",
   Long: `TODO...`,
@@ -40,9 +40,9 @@ var RootCmd = &cobra.Command{
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the RootCmd.
+// This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-  if err := RootCmd.Execute(); err != nil {
+  if err := rootCmd.Execute(); err != nil {
     os.Exit(1)
   }
 }
@@ -54,12 +54,15 @@ func init() {
   // Cobra supports persistent flags, which, if defined here,
   // will be global for your application.
 
-  RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.varz.yaml)")
+  rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.varz.yaml)")
 
 
   // Cobra also supports local flags, which will only run
   // when this action is called directly.
-  RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+  rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+  rootCmd.AddCommand(export.Cmd)
+  rootCmd.AddCommand(list.Cmd)
 }
 
 

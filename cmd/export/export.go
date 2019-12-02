@@ -18,7 +18,6 @@ package export
 import (
 	"fmt"
 	"os"
-	"varz/cmd"
 	"varz/common"
 
 	"github.com/spf13/cobra"
@@ -27,11 +26,10 @@ import (
 var verbose *bool
 
 func init() {
-	cmd.RootCmd.AddCommand(exportCmd)
-	verbose = exportCmd.Flags().BoolP("verbose", "v", false, "Outputs more information on stderr")
+	verbose = Cmd.Flags().BoolP("verbose", "v", false, "Outputs more information on stderr")
 }
 
-var exportCmd = &cobra.Command {
+var Cmd = &cobra.Command {
 	Use:   "export",
 	Short: "Outputs export statements for given subset of variables",
 	Long: `The output of this command is intended to be sourced

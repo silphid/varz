@@ -40,7 +40,7 @@ func GetVariables(fileName, path string) ([]string, map[string]string, error) {
 		keyStr := key.(string)
 		if envVarRegex.MatchString(keyStr) {
 			names = append(names, keyStr)
-			values[keyStr] = section[keyStr].(fmt.Stringer).String()
+			values[keyStr] = fmt.Sprintf("%v", section[keyStr])
 		}
 	}
 	sort.Strings(names)
