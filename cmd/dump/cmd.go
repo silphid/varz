@@ -32,11 +32,15 @@ var Cmd = &cobra.Command {
 }
 
 func run(_ *cobra.Command, args []string) error {
-	keyPath, err := common.GetKeyPathOrDefault(args, 0)
+	keyPath := ""
+	if len(args) == 1 {
+		keyPath = args[0]
+	}
+	keyPath, err := common.GetKeyPathOrDefault(keyPath)
 	if err != nil {
 		return err
 	}
-	names, _, err := common.GetVariables(common.GetDataFilePath(), keyPath)
+	names, _, err := common.GetVariables(common.Options.DataFile, keyPath)
 	if err != nil {
 		return err
 	}

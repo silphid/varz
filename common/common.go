@@ -11,11 +11,15 @@ import (
 	"strings"
 )
 
-type mapping = map[interface{}]interface{}
-
-func GetDataFilePath() string {
-	return "varz.yaml"
+type GlobalOptions struct {
+	ConfigDir string
+	ConfigFile string
+	DataFile string
 }
+
+var Options GlobalOptions
+
+type mapping = map[interface{}]interface{}
 
 func GetVariables(fileName, path string) ([]string, map[string]string, error) {
 	section, e := loadSection(fileName, path)
@@ -94,9 +98,9 @@ func GetDefaultKeyPath() (string, error) {
 	return viper.GetString(defaultKey), nil
 }
 
-func GetKeyPathOrDefault(args []string, index int) (string, error) {
-	if index < len(args) {
-		return args[index], nil
+func GetKeyPathOrDefault(keyPath string) (string, error) {
+	if keyPath != "" {
+		return keyPath, nil
 	}
 	if !viper.IsSet(defaultKey) {
 		return "", errors.New("No key path argument specified and no default set")

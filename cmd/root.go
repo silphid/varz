@@ -17,11 +17,13 @@ package cmd
 
 import (
   "fmt"
+  "github.com/silphid/varz/common"
   "github.com/spf13/cobra"
+  "log"
   "os"
   "path/filepath"
 
-  homedir "github.com/mitchellh/go-homedir"
+  "github.com/mitchellh/go-homedir"
   "github.com/silphid/varz/cmd/dump"
   "github.com/silphid/varz/cmd/export"
   "github.com/silphid/varz/cmd/get"
@@ -30,16 +32,11 @@ import (
   "github.com/spf13/viper"
 )
 
-var cfgFile string
-
 // cmd represents the base command when called without any subcommands
 var cmd = &cobra.Command{
   Use:   "varz",
   Short: "Allows to quickly export different sets of environment variables to current shell",
   Long: `TODO...`,
-  // Uncomment the following line if your bare application
-  // has an action associated with it:
-  //	Run: func(cmd *cobra.Command, args []string) { },
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -53,16 +50,9 @@ func Execute() {
 func init() {
   cobra.OnInitialize(initConfig)
 
-  // Here you will define your flags and configuration settings.
-  // Cobra supports persistent flags, which, if defined here,
-  // will be global for your application.
-
-  cmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (_default is $HOME/.varz.yaml)")
-
-
-  // Cobra also supports local flags, which will only run
-  // when this action is called directly.
-  cmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+  cmd.PersistentFlags().StringVar(&common.Options.ConfigDir, "config-dir", "", "config dir (default is $HOME/.varz)")
+  cmd.PersistentFlags().StringVar(&common.Options.ConfigFile, "config", "", "config file (default is $HOME/.varz/config.yaml)")
+  cmd.PersistentFlags().StringVar(&common.Options.DataFile, "data", "", "data file (default is $HOME/.varz/default.varz)")
 
   cmd.AddCommand(export.Cmd)
   cmd.AddCommand(list.Cmd)
@@ -71,42 +61,90 @@ func init() {
   cmd.AddCommand(set.Cmd)
 }
 
-
-// initConfig reads in config file and ENV variables if set.
 func initConfig() {
-  if cfgFile != "" {
-    // Use config file from the flag.
-    viper.SetConfigFile(cfgFile)
-  } else {
-    // Find home directory.
-    home, err := homedir.Dir()
-    if err != nil {
-      _, _ = fmt.Fprintf(os.Stderr, "Failed to find home directory: %v", err)
-      os.Exit(1)
-    }
-
-    configFile := filepath.Join(home, ".varz.yaml")
-    viper.SetConfigFile(configFile)
-
-    // Force creation of config file, if not already existing
-    if !fileExists(configFile) {
-      emptyFile, err := os.Create(configFile)
-      if err != nil {
-        _, _ = fmt.Fprintf(os.Stderr, "Failed to create config file %s: %v", configFile, err)
-        os.Exit(1)
-      }
-      _ = emptyFile.Close()
-    }
+  opt := &common.Options
+  opt.ConfigDir = getConfigDir(opt.ConfigDir)
+  opt.ConfigFile = getConfigFile(opt.ConfigDir, opt.ConfigFile)
+  opt.DataFile = getDataFile(opt.ConfigDir, opt.DataFile)
+  viper.SetConfigFile(opt.ConfigFile)
+  viper.AutomaticEnv()
+  if err := viper.ReadInConfig(); err != nil {
+    log.Fatalf("failed to read config file %q: %v", opt.ConfigFile, err)
   }
-
-  viper.AutomaticEnv() // read in environment variables that match
-  _ = viper.ReadInConfig() // if a config file is found, read it in.
 }
 
-func fileExists(filename string) bool {
-  info, err := os.Stat(filename)
-  if os.IsNotExist(err) {
-    return false
+func getConfigDir(configDir string) string {
+  if configDir != "" {
+    return configDir
   }
-  return !info.IsDir()
+
+  homeDir, err := homedir.Dir()
+  if err != nil {
+    log.Fatalf("failed to find $HOME directory: %v", err)
+  }
+
+  configDir = filepath.Join(homeDir, ".varz")
+  if err := createDirIfNotExist(configDir); err != nil {
+    log.Fatalf("failed to create config dir %q: %v", configDir, err)
+  }
+
+  return configDir
+}
+
+func getConfigFile(configDir, file string) string {
+  if file != "" {
+    return file
+  }
+  file = filepath.Join(configDir, "config.yaml")
+  if err := createFileIfNotExist(file); err != nil {
+    log.Fatalf("failed to create empty config file %q: %v", file, err)
+  }
+  return file
+}
+
+func getDataFile(configDir, file string) string {
+  if file != "" {
+    return file
+  }
+  file = filepath.Join(configDir, "default.varz")
+  if err := createFileIfNotExist(file); err != nil {
+    log.Fatalf("failed to create empty data file %q: %v", file, err)
+  }
+  return file
+}
+
+func createDirIfNotExist(path string) error {
+  info, err := os.Stat(path)
+  if os.IsExist(err) {
+    return nil
+  }
+  if err != nil {
+    return err
+  }
+  if !info.IsDir() {
+    return fmt.Errorf("expecting directory, but found file %q: %v", path, err)
+  }
+  if err := os.Mkdir(path, os.ModeDir | os.ModePerm); err != nil {
+    return err
+  }
+  return nil
+}
+
+func createFileIfNotExist(path string) error {
+  info, err := os.Stat(path)
+  if os.IsExist(err) {
+    return nil
+  }
+  if err != nil {
+    return err
+  }
+  if info.IsDir() {
+    return fmt.Errorf("expecting file, but found directory %q: %v", path, err)
+  }
+  file, err := os.Create(path)
+  if err != nil {
+    return fmt.Errorf("failed to create empty config path %q: %v", path, err)
+  }
+  _ = file.Close()
+  return nil
 }

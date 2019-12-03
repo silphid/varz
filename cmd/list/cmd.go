@@ -35,11 +35,15 @@ in your current shell. For example:
 }
 
 func run(_ *cobra.Command, args []string) error {
-	keyPath, err := common.GetKeyPathOrDefault(args, 0)
+	keyPath := ""
+	if len(args) == 1 {
+		keyPath = args[0]
+	}
+	keyPath, err := common.GetKeyPathOrDefault(keyPath)
 	if err != nil {
 		return err
 	}
-	names, values, err := common.GetVariables("varz.yaml", keyPath)
+	names, values, err := common.GetVariables(common.Options.DataFile, keyPath)
 	if err != nil {
 		return err
 	}

@@ -15,7 +15,7 @@ var Cmd = &cobra.Command{
 
 func run(_ *cobra.Command, args []string) error {
 	keyPath := args[0]
-	if err := common.EnsureSectionExists(common.GetDataFilePath(), keyPath); err != nil {
+	if err := common.EnsureSectionExists(common.Options.DataFile, keyPath); err != nil {
 		return err
 	}
 	return common.SetDefaultKeyPath(keyPath)

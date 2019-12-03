@@ -18,6 +18,7 @@ package export
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/silphid/varz/common"
 	"github.com/spf13/cobra"
@@ -42,25 +43,50 @@ in your current shell. For example:
 }
 
 func run(_ *cobra.Command, args []string) error {
-	keyPath, err := common.GetKeyPathOrDefault(args, 0)
-	if err != nil {
-		return err
+	keyPath := ""
+	if len(args) == 1 {
+		keyPath = args[0]
 	}
-	names, values, err := common.GetVariables(common.GetDataFilePath(), keyPath)
+
+	stdout, stderr, err := do (common.Options.DataFile, keyPath)
 	if err != nil {
 		return err
 	}
 
-	// Output environment variables
-	for _, name := range names {
-		line := fmt.Sprintf("export %s=%v\n", name, values[name])
-		fmt.Printf(line)
-		if *verbose {
-			if _, err := fmt.Fprintf(os.Stderr, line); err != nil {
-				return err
-			}
+	if stdout != "" {
+		fmt.Print(stdout)
+	}
+
+	if stderr != "" {
+		if _, err := fmt.Fprintf(os.Stderr, stderr); err != nil {
+			return err
 		}
 	}
 
 	return nil
+}
+
+func do(dataFile, keyPath string) (string, string, error) {
+	keyPath, err := common.GetKeyPathOrDefault(keyPath)
+	if err != nil {
+		return "", "", err
+	}
+	names, values, err := common.GetVariables(dataFile, keyPath)
+	if err != nil {
+		return "", "", err
+	}
+	// Output environment variables
+	stdout := strings.Builder{}
+	stderr := strings.Builder{}
+	for _, name := range names {
+		line := fmt.Sprintf("export %s=%v\n", name, values[name])
+		stdout.WriteString(line)
+		if *verbose {
+			if _, err := fmt.Fprintf(os.Stderr, line); err != nil {
+				return "", "", err
+			}
+		}
+	}
+
+	return stdout.String(), stderr.String(), nil
 }
