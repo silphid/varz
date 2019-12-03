@@ -13,23 +13,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package list
+package env
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/silphid/varz/common"
 	"github.com/spf13/cobra"
 )
 
 var Cmd = &cobra.Command {
-	Use:   "list",
-	Short: "Outputs export statements for given subset of variables",
-	Long: `The output of this command is intended to be sourced
-in order to define the corresponding environment variables
-in your current shell. For example:
-
-. <(varz export path/to/vars)`,
+	Use:   "env",
+	Short: "Shows current values in your shell environment for the given variables set",
+	Long: `TODO`,
 	RunE: run,
 	Args: cobra.RangeArgs(0, 1),
 }
@@ -43,14 +40,15 @@ func run(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	names, values, err := common.GetVariables(common.Options.DataFile, keyPath)
+	names, _, err := common.GetVariables(common.Options.EnvFile, keyPath)
 	if err != nil {
 		return err
 	}
 
 	// Output environment variables
 	for _, name := range names {
-		line := fmt.Sprintf("%s=%v\n", name, values[name])
+		value := os.Getenv(name)
+		line := fmt.Sprintf("%s=%v\n", name, value)
 		fmt.Printf(line)
 	}
 

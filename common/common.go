@@ -12,9 +12,9 @@ import (
 )
 
 type GlobalOptions struct {
-	ConfigDir string
+	ConfigDir  string
 	ConfigFile string
-	DataFile string
+	EnvFile    string
 }
 
 var Options GlobalOptions

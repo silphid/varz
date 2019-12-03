@@ -15,8 +15,8 @@ func TestExport(t *testing.T) {
 	}
 	defer os.Remove(file.Name())
 
-	data := `
-section:
+	yaml :=
+`section:
   ENV_VAR1: "abc"
   ENV_VAR2: 123
   subSection:
@@ -27,7 +27,7 @@ section:
   subSection2:
     ENV_VAR6: "mno"
 `
-	if _, err := file.WriteString(data); err != nil {
+	if _, err := file.WriteString(yaml); err != nil {
 		t.Error(err)
 	}
 	if err := file.Close(); err != nil {

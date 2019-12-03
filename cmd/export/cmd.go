@@ -48,7 +48,7 @@ func run(_ *cobra.Command, args []string) error {
 		keyPath = args[0]
 	}
 
-	stdout, stderr, err := do (common.Options.DataFile, keyPath)
+	stdout, stderr, err := do(common.Options.EnvFile, keyPath)
 	if err != nil {
 		return err
 	}
@@ -66,25 +66,24 @@ func run(_ *cobra.Command, args []string) error {
 	return nil
 }
 
-func do(dataFile, keyPath string) (string, string, error) {
+func do(file, keyPath string) (string, string, error) {
 	keyPath, err := common.GetKeyPathOrDefault(keyPath)
 	if err != nil {
 		return "", "", err
 	}
-	names, values, err := common.GetVariables(dataFile, keyPath)
+	names, values, err := common.GetVariables(file, keyPath)
 	if err != nil {
 		return "", "", err
 	}
-	// Output environment variables
+
+	// Output variables
 	stdout := strings.Builder{}
 	stderr := strings.Builder{}
 	for _, name := range names {
 		line := fmt.Sprintf("export %s=%v\n", name, values[name])
 		stdout.WriteString(line)
 		if *verbose {
-			if _, err := fmt.Fprintf(os.Stderr, line); err != nil {
-				return "", "", err
-			}
+			stderr.WriteString(line)
 		}
 	}
 

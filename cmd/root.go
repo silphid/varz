@@ -17,6 +17,8 @@ package cmd
 
 import (
   "fmt"
+  "github.com/silphid/varz/cmd/show/env"
+  "github.com/silphid/varz/cmd/show/file"
   "github.com/silphid/varz/common"
   "github.com/spf13/cobra"
   "log"
@@ -24,10 +26,8 @@ import (
   "path/filepath"
 
   "github.com/mitchellh/go-homedir"
-  "github.com/silphid/varz/cmd/dump"
   "github.com/silphid/varz/cmd/export"
   "github.com/silphid/varz/cmd/get"
-  "github.com/silphid/varz/cmd/list"
   "github.com/silphid/varz/cmd/set"
   "github.com/spf13/viper"
 )
@@ -52,11 +52,11 @@ func init() {
 
   cmd.PersistentFlags().StringVar(&common.Options.ConfigDir, "config-dir", "", "config dir (default is $HOME/.varz)")
   cmd.PersistentFlags().StringVar(&common.Options.ConfigFile, "config", "", "config file (default is $HOME/.varz/config.yaml)")
-  cmd.PersistentFlags().StringVar(&common.Options.DataFile, "data", "", "data file (default is $HOME/.varz/default.varz)")
+  cmd.PersistentFlags().StringVar(&common.Options.EnvFile, "env", "", "environment variables file (default is $HOME/.varz/env.varz)")
 
   cmd.AddCommand(export.Cmd)
-  cmd.AddCommand(list.Cmd)
-  cmd.AddCommand(dump.Cmd)
+  cmd.AddCommand(file.Cmd)
+  cmd.AddCommand(env.Cmd)
   cmd.AddCommand(get.Cmd)
   cmd.AddCommand(set.Cmd)
 }
@@ -65,7 +65,7 @@ func initConfig() {
   opt := &common.Options
   opt.ConfigDir = getConfigDir(opt.ConfigDir)
   opt.ConfigFile = getConfigFile(opt.ConfigDir, opt.ConfigFile)
-  opt.DataFile = getDataFile(opt.ConfigDir, opt.DataFile)
+  opt.EnvFile = getEnvFile(opt.ConfigDir, opt.EnvFile)
   viper.SetConfigFile(opt.ConfigFile)
   viper.AutomaticEnv()
   if err := viper.ReadInConfig(); err != nil {
@@ -102,13 +102,13 @@ func getConfigFile(configDir, file string) string {
   return file
 }
 
-func getDataFile(configDir, file string) string {
+func getEnvFile(configDir, file string) string {
   if file != "" {
     return file
   }
-  file = filepath.Join(configDir, "default.varz")
+  file = filepath.Join(configDir, "env.varz")
   if err := createFileIfNotExist(file); err != nil {
-    log.Fatalf("failed to create empty data file %q: %v", file, err)
+    log.Fatalf("failed to create empty env file %q: %v", file, err)
   }
   return file
 }
