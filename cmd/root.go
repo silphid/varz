@@ -17,8 +17,7 @@ package cmd
 
 import (
   "fmt"
-  "github.com/silphid/varz/cmd/show/env"
-  "github.com/silphid/varz/cmd/show/file"
+  "github.com/silphid/varz/cmd/list"
   "github.com/silphid/varz/common"
   "github.com/spf13/cobra"
   "log"
@@ -32,18 +31,15 @@ import (
   "github.com/spf13/viper"
 )
 
-// cmd represents the base command when called without any subcommands
 var cmd = &cobra.Command{
   Use:   "varz",
   Short: "Allows to quickly export different sets of environment variables to current shell",
-  Long: `TODO...`,
+  Long: `Varz Allows to quickly export different sets of environment variables to current shell.`,
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the cmd.
 func Execute() {
   if err := cmd.Execute(); err != nil {
-    os.Exit(1)
+      os.Exit(1)
   }
 }
 
@@ -52,11 +48,10 @@ func init() {
 
   cmd.PersistentFlags().StringVar(&common.Options.ConfigDir, "config-dir", "", "config dir (default is $HOME/.varz)")
   cmd.PersistentFlags().StringVar(&common.Options.ConfigFile, "config", "", "config file (default is $HOME/.varz/config.yaml)")
-  cmd.PersistentFlags().StringVar(&common.Options.EnvFile, "env", "", "environment variables file (default is $HOME/.varz/env.varz)")
+  cmd.PersistentFlags().StringVar(&common.Options.EnvFile, "env", "", "environment variables file (default is $HOME/.varz/varz.yaml)")
 
   cmd.AddCommand(export.Cmd)
-  cmd.AddCommand(file.Cmd)
-  cmd.AddCommand(env.Cmd)
+  cmd.AddCommand(list.Cmd)
   cmd.AddCommand(get.Cmd)
   cmd.AddCommand(set.Cmd)
 }
@@ -65,7 +60,7 @@ func initConfig() {
   opt := &common.Options
   opt.ConfigDir = getConfigDir(opt.ConfigDir)
   opt.ConfigFile = getConfigFile(opt.ConfigDir, opt.ConfigFile)
-  opt.EnvFile = getEnvFile(opt.ConfigDir, opt.EnvFile)
+  opt.EnvFile = getVarzFile(opt.ConfigDir, opt.EnvFile)
   viper.SetConfigFile(opt.ConfigFile)
   viper.AutomaticEnv()
   if err := viper.ReadInConfig(); err != nil {
@@ -84,7 +79,7 @@ func getConfigDir(configDir string) string {
   }
 
   configDir = filepath.Join(homeDir, ".varz")
-  if err := createDirIfNotExist(configDir); err != nil {
+  if err := os.MkdirAll(configDir, os.ModePerm); err != nil {
     log.Fatalf("failed to create config dir %q: %v", configDir, err)
   }
 
@@ -96,54 +91,66 @@ func getConfigFile(configDir, file string) string {
     return file
   }
   file = filepath.Join(configDir, "config.yaml")
-  if err := createFileIfNotExist(file); err != nil {
+  if err := createConfigFileIfNotExist(file); err != nil {
     log.Fatalf("failed to create empty config file %q: %v", file, err)
   }
   return file
 }
 
-func getEnvFile(configDir, file string) string {
+func getVarzFile(configDir, file string) string {
   if file != "" {
     return file
   }
-  file = filepath.Join(configDir, "env.varz")
-  if err := createFileIfNotExist(file); err != nil {
-    log.Fatalf("failed to create empty env file %q: %v", file, err)
+  file = filepath.Join(configDir, "varz.yaml")
+  if err := createVarzFileIfNotExist(file); err != nil {
+    log.Fatalf("failed to create empty varz.yaml file %q: %v", file, err)
   }
   return file
 }
 
-func createDirIfNotExist(path string) error {
-  info, err := os.Stat(path)
-  if os.IsExist(err) {
+func createConfigFileIfNotExist(path string) error {
+  _, err := os.Stat(path)
+  if !os.IsNotExist(err) {
     return nil
-  }
-  if err != nil {
-    return err
-  }
-  if !info.IsDir() {
-    return fmt.Errorf("expecting directory, but found file %q: %v", path, err)
-  }
-  if err := os.Mkdir(path, os.ModeDir | os.ModePerm); err != nil {
-    return err
-  }
-  return nil
-}
-
-func createFileIfNotExist(path string) error {
-  info, err := os.Stat(path)
-  if os.IsExist(err) {
-    return nil
-  }
-  if err != nil {
-    return err
-  }
-  if info.IsDir() {
-    return fmt.Errorf("expecting file, but found directory %q: %v", path, err)
   }
   file, err := os.Create(path)
   if err != nil {
     return fmt.Errorf("failed to create empty config path %q: %v", path, err)
+  }
+  _ = file.Close()
+  return nil
+}
+
+func createVarzFileIfNotExist(path string) error {
+  _, err := os.Stat(path)
+  if !os.IsNotExist(err) {
+    return nil
+  }
+  file, err := os.Create(path)
+  if err != nil {
+    return fmt.Errorf("failed to create empty config path %q: %v", path, err)
+  }
+  _, err = fmt.Fprint(file,
+    `section1:
+  ENV_VAR1: "abc"
+  ENV_VAR2: 123
+  subSection1:
+    ENV_VAR3: "cba"
+    ENV_VAR4: 321
+  subSection2:
+    ENV_VAR6: "aaa"
+
+section2:
+  ENV_VAR1: "def"
+  ENV_VAR2: 456
+  subSection1:
+    ENV_VAR3: "fed"
+    ENV_VAR4: 654
+  subSection2:
+    ENV_VAR6: "ddd"
+`)
+  if err != nil {
+    return err
   }
   _ = file.Close()
   return nil

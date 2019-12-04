@@ -13,18 +13,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package file
+package sections
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/silphid/varz/common"
 	"github.com/spf13/cobra"
 )
 
 var Cmd = &cobra.Command {
-	Use:   "file",
-	Short: "Shows values configured in your yaml file for the given variables set",
+	Use:   "sections [SECTION]",
+	Short: "Lists available sections or sub-sections withing given sections",
 	Long: ``,
 	RunE: run,
 	Args: cobra.RangeArgs(0, 1),
@@ -35,20 +36,24 @@ func run(_ *cobra.Command, args []string) error {
 	if len(args) == 1 {
 		keyPath = args[0]
 	}
-	keyPath, err := common.GetKeyPathOrDefault(keyPath)
+	stdout, err := do(common.Options.EnvFile, keyPath)
 	if err != nil {
 		return err
 	}
-	names, values, err := common.GetVariables(common.Options.EnvFile, keyPath)
-	if err != nil {
-		return err
+	if stdout != "" {
+		fmt.Print(stdout)
 	}
-
-	// Output environment variables
-	for _, name := range names {
-		line := fmt.Sprintf("%s=%v\n", name, values[name])
-		fmt.Printf(line)
-	}
-
 	return nil
+}
+
+func do(file, keyPath string) (string, error) {
+	names, err := common.GetSections(file, keyPath)
+	if err != nil {
+		return "", err
+	}
+	stdout := strings.Builder{}
+	for _, name := range names {
+		stdout.WriteString(name + "\n")
+	}
+	return stdout.String(), nil
 }

@@ -16,7 +16,7 @@ func TestExport(t *testing.T) {
 	defer os.Remove(file.Name())
 
 	yaml :=
-`section:
+`sections:
   ENV_VAR1: "abc"
   ENV_VAR2: 123
   subSection:
@@ -34,7 +34,7 @@ func TestExport(t *testing.T) {
 		t.Error(err)
 	}
 
-	gotStdout, gotStderr, err := do(file.Name(), "section/subSection")
+	gotStdout, gotStderr, err := do(file.Name(), "sections/subSection")
 	if err != nil {
 		t.Error(err)
 	}

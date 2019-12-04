@@ -37,7 +37,7 @@ var Cmd = &cobra.Command {
 in order to define the corresponding environment variables
 in your current shell. For example:
 
-. <(varz export path/to/vars)`,
+. <(varz export path/to/entries)`,
 	RunE: run,
 	Args: cobra.RangeArgs(0, 1),
 }

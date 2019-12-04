@@ -24,14 +24,15 @@ import (
 )
 
 var Cmd = &cobra.Command {
-	Use:   "env",
-	Short: "Shows current values in your shell environment for the given variables set",
+	Use:   "env [SECTION]",
+	Short: "Lists values currently set in your shell environment variables for given section",
 	Long: `TODO`,
 	RunE: run,
 	Args: cobra.RangeArgs(0, 1),
 }
 
 func run(_ *cobra.Command, args []string) error {
+	// TODO: If no keypath given, use first section (instead of default)
 	keyPath := ""
 	if len(args) == 1 {
 		keyPath = args[0]
