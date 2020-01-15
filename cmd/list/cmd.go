@@ -9,6 +9,7 @@ import (
 
 var Cmd = &cobra.Command{
 	Use:   "list sections|entries|env",
+	Aliases: []string{"ls"},
 	Short: "Lists sections, variables defined in sections, or current environment variables.",
 	Long: `Lists sections, variables defined in sections, or current environment variables.`,
 }

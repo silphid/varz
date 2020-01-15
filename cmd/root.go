@@ -73,15 +73,32 @@ func getConfigDir(configDir string) string {
     return configDir
   }
 
-  homeDir, err := homedir.Dir()
-  if err != nil {
-    log.Fatalf("failed to find $HOME directory: %v", err)
+  // VARZ env variable defines directory to use
+  configDir, ok := os.LookupEnv("VARZ")
+  if !ok {
+    // Fallback to "~/.varz"
+    homeDir, err := homedir.Dir()
+    if err != nil {
+      log.Fatalf("failed to find $HOME directory: %v", err)
+    }
+    configDir = filepath.Join(homeDir, ".varz")
   }
 
-  configDir = filepath.Join(homeDir, ".varz")
+  // Resolve to absolute path
+  configDir, err := filepath.Abs(configDir)
+  if err != nil {
+    log.Fatalf("failed to resolve absolute path of config dir %s: %v", configDir, err)
+  }
+
+  // Ensure directory exists or create it
   if err := os.MkdirAll(configDir, os.ModePerm); err != nil {
     log.Fatalf("failed to create config dir %q: %v", configDir, err)
   }
+
+  //_, err = fmt.Fprintf(os.Stderr, "Using config dir: %s\n", configDir)
+  //if err != nil {
+  //  log.Fatalf("failed to output config dir: %s", err)
+  //}
 
   return configDir
 }
