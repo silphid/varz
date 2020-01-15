@@ -31,13 +31,13 @@ func init() {
 }
 
 var Cmd = &cobra.Command {
-	Use:   "export",
+	Use:   "export [SECTION]",
 	Short: "Outputs export statements for given subset of variables",
 	Long: `The output of this command is intended to be sourced
 in order to define the corresponding environment variables
 in your current shell. For example:
 
-. <(varz export path/to/entries)`,
+  . <(varz export SECTION)`,
 	RunE: run,
 	Args: cobra.RangeArgs(0, 1),
 }

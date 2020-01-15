@@ -34,7 +34,7 @@ import (
 var cmd = &cobra.Command{
   Use:   "varz",
   Short: "Allows to quickly export different sets of environment variables to current shell",
-  Long: `Varz Allows to quickly export different sets of environment variables to current shell.`,
+  Long: `Varz allows to quickly export different sets of environment variables to current shell.`,
 }
 
 func Execute() {
