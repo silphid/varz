@@ -17,25 +17,35 @@ type GlobalOptions struct {
 	EnvFile    string
 }
 
+const BaseKey string = "base"
+
 var Options GlobalOptions
 
-type mapping = map[interface{}]interface{}
+type Document = map[interface{}]interface{}
 
 func GetVariables(fileName, path string) ([]string, map[string]string, error) {
-	section, e := LoadSection(fileName, path)
-	if e != nil {
-		return nil, nil, e
+	doc, err := Load(fileName)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	baseSection, _ := GetSection(doc, BaseKey)
+	requestedSection, err := GetSection(doc, path)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	// Extract and sort valid environment variables
-	length := len(section)
+	length := len(baseSection) + len(requestedSection)
 	names := make([]string, 0, length)
 	values := make(map[string]string, length)
-	for key := range section {
-		keyStr := key.(string)
-		if IsEnvVarName(keyStr) {
-			names = append(names, keyStr)
-			values[keyStr] = fmt.Sprintf("%v", section[keyStr])
+	for _, section := range []Document{baseSection, requestedSection} {
+		for key := range section {
+			keyStr := key.(string)
+			if IsEnvVarName(keyStr) {
+				names = append(names, keyStr)
+				values[keyStr] = fmt.Sprintf("%v", section[keyStr])
+			}
 		}
 	}
 	sort.Strings(names)
@@ -44,9 +54,14 @@ func GetVariables(fileName, path string) ([]string, map[string]string, error) {
 }
 
 func GetSections(fileName, path string) ([]string, error) {
-	section, e := LoadSection(fileName, path)
+	doc, e := Load(fileName)
 	if e != nil {
 		return nil, e
+	}
+
+	section, err := GetSection(doc, path)
+	if err != nil {
+		return nil, err
 	}
 
 	// Extract and sort valid sections names
@@ -54,7 +69,7 @@ func GetSections(fileName, path string) ([]string, error) {
 	names := make([]string, 0, length)
 	for key := range section {
 		keyStr := key.(string)
-		if !IsEnvVarName(keyStr) {
+		if !IsEnvVarName(keyStr) && keyStr != BaseKey {
 			names = append(names, keyStr)
 		}
 	}
@@ -69,11 +84,16 @@ func IsEnvVarName(key string) bool {
 }
 
 func EnsureSectionExists(filePath, keyPath string) error {
-	_, err := LoadSection(filePath, keyPath)
+	doc, err := Load(filePath)
+	if err != nil {
+		return err
+	}
+
+	_, err = GetSection(doc, keyPath)
 	return err
 }
 
-func LoadSection(fileName string, path string) (mapping, error) {
+func Load(fileName string) (Document, error) {
 	// Load file to buffer
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
@@ -81,29 +101,25 @@ func LoadSection(fileName string, path string) (mapping, error) {
 	}
 
 	// Parse buffer as yaml into map
-	m := make(mapping)
-	err = yaml.Unmarshal(data, &m)
+	doc := make(Document)
+	err = yaml.Unmarshal(data, &doc)
 	if err != nil {
 		return nil, err
 	}
 
-	// Find sections within yaml tree
-	if path == "" {
-		return m, nil
-	}
-	section, err := getSection(m, path)
-	if err != nil {
-		return nil, err
-	}
-	return section, nil
+	return doc, nil
 }
 
-func getSection(m mapping, path string) (mapping, error) {
-	cur := m
+func GetSection(doc Document, path string) (Document, error) {
+	if path == "" {
+		return doc, nil
+	}
+
+	cur := doc
 	for _, component := range strings.Split(path, "/") {
-		val, ok := cur[component].(mapping)
+		val, ok := cur[component].(Document)
 		if !ok {
-			return nil, fmt.Errorf("sections not found: %s", path)
+			return nil, fmt.Errorf("section not found: %s", path)
 		}
 		cur = val
 	}
