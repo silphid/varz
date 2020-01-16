@@ -58,7 +58,7 @@ func run(_ *cobra.Command, args []string) error {
 	}
 
 	if stderr != "" {
-		if _, err := fmt.Fprintf(os.Stderr, stderr); err != nil {
+		if _, err := fmt.Fprint(os.Stderr, stderr); err != nil {
 			return err
 		}
 	}
