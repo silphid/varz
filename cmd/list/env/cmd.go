@@ -50,7 +50,7 @@ func run(_ *cobra.Command, args []string) error {
 	for _, name := range names {
 		value := os.Getenv(name)
 		line := fmt.Sprintf("%s=%v\n", name, value)
-		fmt.Printf(line)
+		fmt.Print(line)
 	}
 
 	return nil
