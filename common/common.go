@@ -2,8 +2,6 @@ package common
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
-	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"regexp"
@@ -13,7 +11,6 @@ import (
 
 type GlobalOptions struct {
 	ConfigDir  string
-	ConfigFile string
 	EnvFile    string
 }
 
@@ -83,16 +80,6 @@ func IsEnvVarName(key string) bool {
 	return envVarRegex.MatchString(key)
 }
 
-func EnsureSectionExists(filePath, keyPath string) error {
-	doc, err := Load(filePath)
-	if err != nil {
-		return err
-	}
-
-	_, err = GetSection(doc, keyPath)
-	return err
-}
-
 func Load(fileName string) (Document, error) {
 	// Load file to buffer
 	data, err := ioutil.ReadFile(fileName)
@@ -124,31 +111,4 @@ func GetSection(doc Document, path string) (Document, error) {
 		cur = val
 	}
 	return cur, nil
-}
-
-var defaultKey = "default"
-
-func SetDefaultKeyPath(value string) error {
-	viper.Set(defaultKey, value)
-	if err := viper.WriteConfig(); err != nil {
-		return errors.Wrap(err, "failed to write default key path")
-	}
-	return nil
-}
-
-func GetDefaultKeyPath() (string, error) {
-	if !viper.IsSet(defaultKey) {
-		return "", errors.New("No default key path already set")
-	}
-	return viper.GetString(defaultKey), nil
-}
-
-func GetKeyPathOrDefault(keyPath string) (string, error) {
-	if keyPath != "" {
-		return keyPath, nil
-	}
-	if !viper.IsSet(defaultKey) {
-		return "", errors.New("No key path argument specified and no default set")
-	}
-	return viper.GetString(defaultKey), nil
 }

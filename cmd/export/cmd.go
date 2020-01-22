@@ -31,7 +31,7 @@ func init() {
 }
 
 var Cmd = &cobra.Command {
-	Use:   "export [SECTION]",
+	Use:   "export SECTION",
 	Short: "Outputs export statements for given subset of variables",
 	Long: `The output of this command is intended to be sourced
 in order to define the corresponding environment variables
@@ -39,14 +39,11 @@ in your current shell. For example:
 
   . <(varz export SECTION)`,
 	RunE: run,
-	Args: cobra.RangeArgs(0, 1),
+	Args: cobra.ExactArgs(1),
 }
 
 func run(_ *cobra.Command, args []string) error {
-	keyPath := ""
-	if len(args) == 1 {
-		keyPath = args[0]
-	}
+	keyPath := args[0]
 
 	stdout, stderr, err := do(common.Options.EnvFile, keyPath)
 	if err != nil {
@@ -67,10 +64,6 @@ func run(_ *cobra.Command, args []string) error {
 }
 
 func do(file, keyPath string) (string, string, error) {
-	keyPath, err := common.GetKeyPathOrDefault(keyPath)
-	if err != nil {
-		return "", "", err
-	}
 	names, values, err := common.GetVariables(file, keyPath)
 	if err != nil {
 		return "", "", err
