@@ -23,7 +23,10 @@ func (doc Document) GetSection(name string) (Document, error) {
 	if name == ArbitrarySection {
 		for key, value := range doc {
 			if key != BaseKey {
-				return value.(Document), nil
+				val, ok := value.(Document)
+				if ok {
+					return val, nil
+				}
 			}
 		}
 	}
