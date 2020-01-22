@@ -13,45 +13,43 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package env
+package sections
 
 import (
 	"fmt"
-	"os"
+	"strings"
 
 	"github.com/silphid/varz/common"
 	"github.com/spf13/cobra"
 )
 
 var Cmd = &cobra.Command {
-	Use:   "env [SECTION]",
-	Short: "Lists values currently set in your shell environment variables for given section",
-	Long: `TODO`,
+	Use:   "sections",
+	Short: "Lists available sections",
+	Long: ``,
 	RunE: run,
-	Args: cobra.RangeArgs(0, 1),
+	Args: cobra.NoArgs,
 }
 
-func run(_ *cobra.Command, args []string) error {
-	// TODO: If no keypath given, use first section (instead of default)
-	keyPath := ""
-	if len(args) == 1 {
-		keyPath = args[0]
-	}
-	keyPath, err := common.GetKeyPathOrDefault(keyPath)
+func run(_ *cobra.Command, _ []string) error {
+	stdout, err := do(common.Options.EnvFile)
 	if err != nil {
 		return err
 	}
-	names, _, err := common.GetVariables(common.Options.EnvFile, keyPath)
-	if err != nil {
-		return err
+	if stdout != "" {
+		fmt.Print(stdout)
 	}
-
-	// Output environment variables
-	for _, name := range names {
-		value := os.Getenv(name)
-		line := fmt.Sprintf("%s=%v\n", name, value)
-		fmt.Print(line)
-	}
-
 	return nil
+}
+
+func do(file string) (string, error) {
+	names, err := common.LoadSectionNames(file)
+	if err != nil {
+		return "", err
+	}
+	stdout := strings.Builder{}
+	for _, name := range names {
+		stdout.WriteString(name + "\n")
+	}
+	return stdout.String(), nil
 }

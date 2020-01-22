@@ -17,15 +17,16 @@ package cmd
 
 import (
   "fmt"
-  "github.com/silphid/varz/cmd/list"
+  "github.com/mitchellh/go-homedir"
+  "github.com/silphid/varz/cmd/entries"
+  "github.com/silphid/varz/cmd/env"
+  "github.com/silphid/varz/cmd/export"
+  "github.com/silphid/varz/cmd/sections"
   "github.com/silphid/varz/common"
   "github.com/spf13/cobra"
   "log"
   "os"
   "path/filepath"
-
-  "github.com/mitchellh/go-homedir"
-  "github.com/silphid/varz/cmd/export"
 )
 
 var cmd = &cobra.Command{
@@ -47,7 +48,9 @@ func init() {
   cmd.PersistentFlags().StringVar(&common.Options.EnvFile, "env", "", "environment variables file (default is $HOME/.varz/varz.yaml)")
 
   cmd.AddCommand(export.Cmd)
-  cmd.AddCommand(list.Cmd)
+  cmd.AddCommand(sections.Cmd)
+  cmd.AddCommand(entries.Cmd)
+  cmd.AddCommand(env.Cmd)
 }
 
 func initConfig() {

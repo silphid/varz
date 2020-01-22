@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"regexp"
 	"sort"
-	"strings"
 )
 
 type GlobalOptions struct {
@@ -15,19 +13,36 @@ type GlobalOptions struct {
 }
 
 const BaseKey string = "base"
+const ArbitrarySection = "???"
 
 var Options GlobalOptions
 
-type Document = map[interface{}]interface{}
+type Document map[interface{}]interface{}
 
-func GetVariables(fileName, path string) ([]string, map[string]string, error) {
-	doc, err := Load(fileName)
+func (doc Document) GetSection(name string) (Document, error) {
+	if name == ArbitrarySection {
+		for key, value := range doc {
+			if key != BaseKey {
+				return value.(Document), nil
+			}
+		}
+	}
+
+	val, ok := doc[name].(Document)
+	if !ok {
+		return nil, fmt.Errorf("section not found: %s", name)
+	}
+	return val, nil
+}
+
+func GetVariables(fileName, sectionName string) ([]string, map[string]string, error) {
+	doc, err := LoadDocument(fileName)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	baseSection, _ := GetSection(doc, BaseKey)
-	requestedSection, err := GetSection(doc, path)
+	baseSection, _ := doc.GetSection(BaseKey)
+	requestedSection, err := doc.GetSection(sectionName)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -39,10 +54,8 @@ func GetVariables(fileName, path string) ([]string, map[string]string, error) {
 	for _, section := range []Document{baseSection, requestedSection} {
 		for key := range section {
 			keyStr := key.(string)
-			if IsEnvVarName(keyStr) {
-				names = append(names, keyStr)
-				values[keyStr] = fmt.Sprintf("%v", section[keyStr])
-			}
+			names = append(names, keyStr)
+			values[keyStr] = fmt.Sprintf("%v", section[keyStr])
 		}
 	}
 	sort.Strings(names)
@@ -50,23 +63,18 @@ func GetVariables(fileName, path string) ([]string, map[string]string, error) {
 	return names, values, nil
 }
 
-func GetSections(fileName, path string) ([]string, error) {
-	doc, e := Load(fileName)
+func LoadSectionNames(fileName string) ([]string, error) {
+	doc, e := LoadDocument(fileName)
 	if e != nil {
 		return nil, e
 	}
 
-	section, err := GetSection(doc, path)
-	if err != nil {
-		return nil, err
-	}
-
 	// Extract and sort valid sections names
-	length := len(section)
+	length := len(doc)
 	names := make([]string, 0, length)
-	for key := range section {
+	for key := range doc {
 		keyStr := key.(string)
-		if !IsEnvVarName(keyStr) && keyStr != BaseKey {
+		if keyStr != BaseKey {
 			names = append(names, keyStr)
 		}
 	}
@@ -74,13 +82,7 @@ func GetSections(fileName, path string) ([]string, error) {
 	return names, nil
 }
 
-var envVarRegex = regexp.MustCompile(`^[A-Z0-9_]+$`)
-
-func IsEnvVarName(key string) bool {
-	return envVarRegex.MatchString(key)
-}
-
-func Load(fileName string) (Document, error) {
+func LoadDocument(fileName string) (Document, error) {
 	// Load file to buffer
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
@@ -95,20 +97,4 @@ func Load(fileName string) (Document, error) {
 	}
 
 	return doc, nil
-}
-
-func GetSection(doc Document, path string) (Document, error) {
-	if path == "" {
-		return doc, nil
-	}
-
-	cur := doc
-	for _, component := range strings.Split(path, "/") {
-		val, ok := cur[component].(Document)
-		if !ok {
-			return nil, fmt.Errorf("section not found: %s", path)
-		}
-		cur = val
-	}
-	return cur, nil
 }

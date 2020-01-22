@@ -35,10 +35,6 @@ func run(_ *cobra.Command, args []string) error {
 	if len(args) == 1 {
 		keyPath = args[0]
 	}
-	keyPath, err := common.GetKeyPathOrDefault(keyPath)
-	if err != nil {
-		return err
-	}
 	names, values, err := common.GetVariables(common.Options.EnvFile, keyPath)
 	if err != nil {
 		return err
