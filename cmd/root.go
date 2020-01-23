@@ -16,7 +16,6 @@ limitations under the License.
 package cmd
 
 import (
-  "fmt"
   "github.com/mitchellh/go-homedir"
   "github.com/silphid/varz/cmd/entries"
   "github.com/silphid/varz/cmd/env"
@@ -86,11 +85,6 @@ func getConfigDir(configDir string) string {
     log.Fatalf("failed to create config dir %q: %v", configDir, err)
   }
 
-  //_, err = fmt.Fprintf(os.Stderr, "Using config dir: %s\n", configDir)
-  //if err != nil {
-  //  log.Fatalf("failed to output config dir: %s", err)
-  //}
-
   return configDir
 }
 
@@ -99,43 +93,9 @@ func getVarzFile(configDir, file string) string {
     return file
   }
   file = filepath.Join(configDir, "varz.yaml")
-  if err := createVarzFileIfNotExist(file); err != nil {
-    log.Fatalf("failed to create empty varz.yaml file %q: %v", file, err)
+  _, err := os.Stat(file)
+  if os.IsNotExist(err) {
+    log.Fatalf("missing varz.yaml file: %v", err)
   }
   return file
-}
-
-func createVarzFileIfNotExist(path string) error {
-  _, err := os.Stat(path)
-  if !os.IsNotExist(err) {
-    return nil
-  }
-  file, err := os.Create(path)
-  if err != nil {
-    return fmt.Errorf("failed to create empty config path %q: %v", path, err)
-  }
-  _, err = fmt.Fprint(file,
-    `section1:
-  ENV_VAR1: "abc"
-  ENV_VAR2: 123
-  subSection1:
-    ENV_VAR3: "cba"
-    ENV_VAR4: 321
-  subSection2:
-    ENV_VAR6: "aaa"
-
-section2:
-  ENV_VAR1: "def"
-  ENV_VAR2: 456
-  subSection1:
-    ENV_VAR3: "fed"
-    ENV_VAR4: 654
-  subSection2:
-    ENV_VAR6: "ddd"
-`)
-  if err != nil {
-    return err
-  }
-  _ = file.Close()
-  return nil
 }
